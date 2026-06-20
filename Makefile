@@ -96,4 +96,24 @@ clean:
 test:
 	$(TS) test
 
-.PHONY: all install uninstall clean test
+.PHONY: all install uninstall clean test deploy-setup deploy-push deploy-retry deploy-log deploy-status
+
+DEPLOY_HOST ?= Monolith
+DEPLOY_REMOTE ?= monolith
+
+deploy-setup:
+	ssh $(DEPLOY_HOST) 'sh -s' < deploy/setup-repo $(LANGUAGE_NAME)
+	scp deploy/post-receive $(DEPLOY_HOST):repo/$(LANGUAGE_NAME).git/hooks/post-receive
+	ssh $(DEPLOY_HOST) 'chmod +x repo/$(LANGUAGE_NAME).git/hooks/post-receive'
+
+deploy-push:
+	git push $(DEPLOY_REMOTE) main
+
+deploy-retry:
+	ssh $(DEPLOY_HOST) 'cd builds/$(LANGUAGE_NAME) && deploy/pipeline $(LANGUAGE_NAME) $$(cat .pipeline-state/.commit)'
+
+deploy-log:
+	ssh $(DEPLOY_HOST) 'cat builds/$(LANGUAGE_NAME)/.pipeline.log'
+
+deploy-status:
+	ssh $(DEPLOY_HOST) 'ls -la builds/$(LANGUAGE_NAME)/.pipeline-state/'

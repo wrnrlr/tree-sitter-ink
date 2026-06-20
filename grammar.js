@@ -15,7 +15,7 @@ module.exports = grammar({
 
   word: $ => $.var,
   extras: $ => [/[ \t]+/],
-  externals: $ => [$._MINUS, $._BOOL, $._BOOLS, $._INTS, $._FLOATS, $._SYMBOLS, $._STRING],
+  externals: $ => [$._MINUS, $._BOOL, $._BOOLS, $._INTS, $._FLOATS, $._SYMBOLS, $._STRING, $._DATE, $._DATES, $._TIME, $._TIMES],
   inline: $ => [$.phrase, $.items],
   supertypes: $ => [$.clause, $.phrase, $.noun, $.verb, $.query],
   conflicts: $ => [
@@ -81,7 +81,7 @@ module.exports = grammar({
     adverb: _ => P(1, I(/[\/\\']:?/)),
 
     // Literals
-    literal: $ => C($.bool, $.bools, $.int, $.ints, $.float, $.floats, $.string, $.symbols, $.symbol, $.var),
+    literal: $ => C($.bool, $.bools, $.int, $.ints, $.float, $.floats, $.string, $.symbols, $.symbol, $.var, $.date, $.dates, $.time, $.times),
     bool: $ => $._BOOL,
     bools: $ => $._BOOLS,
     int: _ => C(/-?0[NW]/, /-?\d+/, /-?0x[\da-f]+/i),
@@ -95,6 +95,10 @@ module.exports = grammar({
       S('"', /[^"]*/, '"'),
     )))),
     symbols: $ => $._SYMBOLS,
+    date: $ => $._DATE,
+    dates: $ => $._DATES,
+    time: $ => $._TIME,
+    times: $ => $._TIMES,
     var: _ => /[a-zA-Z][a-zA-Z\d]*(?:\.[a-zA-Z][a-zA-Z\d]*)*/,
 
     _keyword_op: $ => C('sqrt', 'sqr', 'exp', 'log', 'sin', 'cos', 'abs',

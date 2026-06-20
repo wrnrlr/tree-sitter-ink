@@ -1,6 +1,6 @@
 #include "tree_sitter/parser.h"
 
-enum TokenType { MINUS, BOOL, BOOLS, INTS, FLOATS, SYMBOLS, STRING };
+enum TokenType { MINUS, BOOL, BOOLS, INTS, FLOATS, SYMBOLS, STRING, DATE, DATES, TIME, TIMES };
 
 void *tree_sitter_ink_external_scanner_create() { return 0; }
 void tree_sitter_ink_external_scanner_destroy(void *p) {}
@@ -107,11 +107,7 @@ static int scan_num(TSLexer *l) {
   return finish_suffix(l);
 }
 
-/* Scan symbol content after the leading backtick.
-   Follows Zig lexer rules:
-   1. '"' → quoted symbol
-   2. op char → consume all consecutive op chars (greedy)
-   3. else → consume all consecutive alnum+dot chars */
+/* Scan symbol content after the leading backtick. */
 static void scan_sym_content(TSLexer *l) {
   if (l->lookahead == '"') {
     adv(l);
@@ -163,6 +159,42 @@ static int strand_loop(TSLexer *l, int has_float,
   return 0;
 }
 
+/* Try to scan a date value: exactly DDDD.DD.DD */
+static int scan_date_val(TSLexer *l) {
+  int d = 0;
+  while (dig(l->lookahead)) { adv(l); d++; }
+  if (d != 4 || l->lookahead != '.') return 0;
+  adv(l);
+  d = 0;
+  while (dig(l->lookahead)) { adv(l); d++; }
+  if (d != 2 || l->lookahead != '.') return 0;
+  adv(l);
+  d = 0;
+  while (dig(l->lookahead)) { adv(l); d++; }
+  return (d == 2 && !dig(l->lookahead));
+}
+
+/* Try to scan a time value: DD:DD:DD[.D+] */
+static int scan_time_val(TSLexer *l) {
+  int d = 0;
+  while (dig(l->lookahead)) { adv(l); d++; }
+  if (d != 2 || l->lookahead != ':') return 0;
+  adv(l);
+  d = 0;
+  while (dig(l->lookahead)) { adv(l); d++; }
+  if (d != 2 || l->lookahead != ':') return 0;
+  adv(l);
+  d = 0;
+  while (dig(l->lookahead)) { adv(l); d++; }
+  if (d != 2) return 0;
+  if (l->lookahead == '.') {
+    adv(l);
+    if (!dig(l->lookahead)) return 0;
+    while (dig(l->lookahead)) adv(l);
+  }
+  return 1;
+}
+
 int tree_sitter_ink_external_scanner_scan(void *payload, TSLexer *lexer, const char *valid_symbols) {
 
   /* STRING: direct match when at '"' */
@@ -180,10 +212,12 @@ int tree_sitter_ink_external_scanner_scan(void *payload, TSLexer *lexer, const c
     return 1;
   }
 
-  /* Skip leading whitespace for strand/symbol/bool detection */
+  /* Skip leading whitespace for strand/symbol/bool/date/time detection */
   int need_skip = valid_symbols[STRING]  || valid_symbols[SYMBOLS] ||
                   valid_symbols[BOOL]    || valid_symbols[BOOLS]   ||
-                  valid_symbols[INTS]    || valid_symbols[FLOATS];
+                  valid_symbols[INTS]    || valid_symbols[FLOATS]  ||
+                  valid_symbols[DATE]    || valid_symbols[DATES]   ||
+                  valid_symbols[TIME]    || valid_symbols[TIMES];
   if (need_skip && (lexer->lookahead == ' ' || lexer->lookahead == '\t')) {
     while (lexer->lookahead == ' ' || lexer->lookahead == '\t')
       lexer->advance(lexer, 1);
@@ -215,44 +249,134 @@ int tree_sitter_ink_external_scanner_scan(void *payload, TSLexer *lexer, const c
 
   int need_bool = (valid_symbols[BOOL] || valid_symbols[BOOLS]);
   int need_num  = (valid_symbols[INTS] || valid_symbols[FLOATS]);
+  int need_date = (valid_symbols[DATE] || valid_symbols[DATES]);
+  int need_time = (valid_symbols[TIME] || valid_symbols[TIMES]);
 
-  /* Unified handler for BOOL, BOOLS, INTS, FLOATS.
-     '0' and '1' can start both bools ([01]+b) and ints. */
-  if ((lexer->lookahead == '0' || lexer->lookahead == '1') && (need_bool || need_num)) {
+  /* Unified handler for digit-led tokens:
+     BOOL, BOOLS, INTS, FLOATS, DATE, DATES, TIME, TIMES */
+  if (dig(lexer->lookahead) && (need_bool || need_num || need_date || need_time)) {
     int first_digit = lexer->lookahead;
-    int nbits = 0;
-    while (lexer->lookahead == '0' || lexer->lookahead == '1') {
-      adv(lexer);
-      nbits++;
+    int ndigits = 0;
+    int all_01 = 1;
+    while (dig(lexer->lookahead)) {
+      if (lexer->lookahead > '1') all_01 = 0;
+      adv(lexer); ndigits++;
     }
-    if (need_bool && lexer->lookahead == 'b') {
+
+    /* TIME: DD:DD:DD[.DDD] — only when exactly 2 digits before first ':' */
+    if (ndigits == 2 && lexer->lookahead == ':' && need_time) {
+      adv(lexer); /* consume first ':' */
+      int m = 0;
+      while (dig(lexer->lookahead)) { adv(lexer); m++; }
+      if (m == 2 && lexer->lookahead == ':') {
+        adv(lexer); /* consume second ':' */
+        int s = 0;
+        while (dig(lexer->lookahead)) { adv(lexer); s++; }
+        if (s == 2) {
+          if (lexer->lookahead == '.') {
+            adv(lexer);
+            while (dig(lexer->lookahead)) adv(lexer);
+          }
+          lexer->mark_end(lexer);
+          int count = 1;
+          while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+            while (lexer->lookahead == ' ' || lexer->lookahead == '\t') adv(lexer);
+            if (!scan_time_val(lexer)) break;
+            count++;
+            lexer->mark_end(lexer);
+          }
+          if (count >= 2 && valid_symbols[TIMES]) { lexer->result_symbol = TIMES; return 1; }
+          if (valid_symbols[TIME]) { lexer->result_symbol = TIME; return 1; }
+        }
+      }
+      return 0; /* failed time match, let internal rules handle digits */
+    }
+
+    /* BOOL/BOOLS: [01]+b */
+    if (need_bool && all_01 && lexer->lookahead == 'b') {
       adv(lexer);
       lexer->mark_end(lexer);
-      if (nbits == 1 && valid_symbols[BOOL]) { lexer->result_symbol = BOOL; return 1; }
-      if (nbits >= 2 && valid_symbols[BOOLS]) { lexer->result_symbol = BOOLS; return 1; }
+      if (ndigits == 1 && valid_symbols[BOOL]) { lexer->result_symbol = BOOL; return 1; }
+      if (ndigits >= 2 && valid_symbols[BOOLS]) { lexer->result_symbol = BOOLS; return 1; }
       return 0;
     }
-    if (!need_num) return 0;
-    int first = 1;
-    if (nbits == 1 && first_digit == '0') {
-      if (lexer->lookahead == 'N' || lexer->lookahead == 'W') { adv(lexer); first = 1; }
-      else if (lexer->lookahead == 'n' || lexer->lookahead == 'w') { adv(lexer); first = 2; }
-      else if (lexer->lookahead == 'x' || lexer->lookahead == 'X') {
+
+    if (!need_num && !need_date) return 0;
+
+    /* Special 0-prefix: 0N, 0W (int), 0n, 0w (float), 0x (hex) */
+    if (ndigits == 1 && first_digit == '0') {
+      if (lexer->lookahead == 'N' || lexer->lookahead == 'W') {
+        adv(lexer);
+        if (!need_num) return 0;
+        return strand_loop(lexer, 0, valid_symbols[INTS], valid_symbols[FLOATS]);
+      }
+      if (lexer->lookahead == 'n' || lexer->lookahead == 'w') {
+        adv(lexer);
+        if (!need_num) return 0;
+        return strand_loop(lexer, 1, valid_symbols[INTS], valid_symbols[FLOATS]);
+      }
+      if (lexer->lookahead == 'x' || lexer->lookahead == 'X') {
         adv(lexer);
         while (xdig(lexer->lookahead)) adv(lexer);
-        first = 1;
-      } else {
-        first = finish_suffix(lexer);
+        if (!need_num) return 0;
+        return strand_loop(lexer, 0, valid_symbols[INTS], valid_symbols[FLOATS]);
       }
-    } else {
-      first = finish_suffix(lexer);
+      /* fall through to general suffix handling */
     }
-    if (first == 0) return 0;
-    return strand_loop(lexer, first==2,
-                       valid_symbols[INTS], valid_symbols[FLOATS]);
+
+    /* Float or Date: digits followed by '.' */
+    if (lexer->lookahead == '.') {
+      adv(lexer); /* consume '.' */
+      int frac = 0;
+      while (dig(lexer->lookahead)) { adv(lexer); frac++; }
+
+      /* DATE check: DDDD.DD.DD */
+      if (need_date && ndigits == 4 && frac == 2 && lexer->lookahead == '.') {
+        adv(lexer); /* consume second '.' */
+        int day = 0;
+        while (dig(lexer->lookahead)) { adv(lexer); day++; }
+        if (day == 2 && !dig(lexer->lookahead) && lexer->lookahead != '.') {
+          lexer->mark_end(lexer);
+          int count = 1;
+          while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+            while (lexer->lookahead == ' ' || lexer->lookahead == '\t') adv(lexer);
+            if (!scan_date_val(lexer)) break;
+            count++;
+            lexer->mark_end(lexer);
+          }
+          if (count >= 2 && valid_symbols[DATES]) { lexer->result_symbol = DATES; return 1; }
+          if (valid_symbols[DATE]) { lexer->result_symbol = DATE; return 1; }
+          return 0;
+        }
+        /* Not a valid date after consuming second dot — return 0, let internal rules handle */
+        return 0;
+      }
+
+      /* 'e' exponent for float */
+      if (lexer->lookahead == 'e' || lexer->lookahead == 'E') {
+        adv(lexer);
+        if (lexer->lookahead == '+' || lexer->lookahead == '-') adv(lexer);
+        while (dig(lexer->lookahead)) adv(lexer);
+      }
+      if (!need_num) return 0;
+      return strand_loop(lexer, 1, valid_symbols[INTS], valid_symbols[FLOATS]);
+    }
+
+    /* Scientific notation: digits followed by 'e' or 'E' */
+    if (lexer->lookahead == 'e' || lexer->lookahead == 'E') {
+      adv(lexer);
+      if (lexer->lookahead == '+' || lexer->lookahead == '-') adv(lexer);
+      while (dig(lexer->lookahead)) adv(lexer);
+      if (!need_num) return 0;
+      return strand_loop(lexer, 1, valid_symbols[INTS], valid_symbols[FLOATS]);
+    }
+
+    /* Plain integer — try stranding */
+    if (!need_num) return 0;
+    return strand_loop(lexer, 0, valid_symbols[INTS], valid_symbols[FLOATS]);
   }
 
-  /* Numeric strand starting with 2-9, '-', or '.' */
+  /* Numeric strand starting with '-' or '.' (leading-dot float or negative number) */
   if (need_num && (dig(lexer->lookahead) || lexer->lookahead == '-' || lexer->lookahead == '.')) {
     int first = scan_num(lexer);
     if (first == 0) return 0;
