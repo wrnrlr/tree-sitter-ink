@@ -164,10 +164,6 @@
           {
             "type": "SYMBOL",
             "name": "cond"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "query"
           }
         ]
       }
@@ -197,190 +193,6 @@
           {
             "type": "SYMBOL",
             "name": "compose"
-          }
-        ]
-      }
-    },
-    "query": {
-      "type": "CHOICE",
-      "members": [
-        {
-          "type": "SYMBOL",
-          "name": "select"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "update"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "delete"
-        }
-      ]
-    },
-    "select": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "select"
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SYMBOL",
-              "name": "rows"
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SEQ",
-              "members": [
-                {
-                  "type": "STRING",
-                  "value": "by"
-                },
-                {
-                  "type": "SYMBOL",
-                  "name": "rows"
-                }
-              ]
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        },
-        {
-          "type": "SYMBOL",
-          "name": "from"
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SYMBOL",
-              "name": "where"
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        }
-      ]
-    },
-    "update": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "update"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "rows"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "from"
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SYMBOL",
-              "name": "where"
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        }
-      ]
-    },
-    "delete": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "delete"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "from"
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SYMBOL",
-              "name": "where"
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        }
-      ]
-    },
-    "from": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "from"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "var"
-        }
-      ]
-    },
-    "where": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "where"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "_stmt"
-        }
-      ]
-    },
-    "rows": {
-      "type": "PREC_DYNAMIC",
-      "value": 2,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "SYMBOL",
-            "name": "_stmt"
-          },
-          {
-            "type": "REPEAT",
-            "content": {
-              "type": "SEQ",
-              "members": [
-                {
-                  "type": "PATTERN",
-                  "value": ",\\s*"
-                },
-                {
-                  "type": "SYMBOL",
-                  "name": "_stmt"
-                }
-              ]
-            }
           }
         ]
       }
@@ -1794,8 +1606,7 @@
     "clause",
     "phrase",
     "noun",
-    "verb",
-    "query"
+    "verb"
   ],
   "reserved": {}
 }

@@ -17,7 +17,7 @@ module.exports = grammar({
   extras: $ => [/[ \t]+/],
   externals: $ => [$._MINUS, $._BOOL, $._BOOLS, $._INTS, $._FLOATS, $._SYMBOLS, $._STRING, $._DATE, $._DATES, $._TIME, $._TIMES],
   inline: $ => [$.phrase, $.items],
-  supertypes: $ => [$.clause, $.phrase, $.noun, $.verb, $.query],
+  supertypes: $ => [$.clause, $.phrase, $.noun, $.verb],
   conflicts: $ => [
     [$.group, $.seq],
     [$.clause, $.compose],
@@ -31,17 +31,8 @@ module.exports = grammar({
     _line: $ => C(S($._stmt, O($._inline_comment)), $._line_comment, $.command),
     command: _ => T(P(10, S('\\', /[a-zA-Z][^\n]*/))),
     _stmt: $ => P(1, C(D(2, $.verb), $.noun, D(-1, $.clause), D(-1, $.adjunct))),
-    clause: $ => D(-1, C($.right, $.bind, $.transit, $.apposit, $.phrase, $.cond, $.query)),
+    clause: $ => D(-1, C($.right, $.bind, $.transit, $.apposit, $.phrase, $.cond)),
     adjunct: $ => D(-1, C($.defer, $.pending, $.intrans, $.prefix, $.compose)),
-    query: $ => C($.select, $.update, $.delete),
-
-    // SQL queries
-    select: $ => S('select', O($.rows), O(S('by', $.rows)), $.from, O($.where)),
-    update: $ => S('update', $.rows, $.from, O($.where)),
-    delete: $ => S('delete', $.from, O($.where)),
-    from: $ => S('from', $.var),
-    where: $ => S('where', $._stmt),
-    rows: $ => D(2, S($._stmt, R(S(/,\s*/, $._stmt)))),
 
     // Clauses
     right: $ => S(':', $.clause),

@@ -20,10 +20,6 @@
         "named": true
       },
       {
-        "type": "query",
-        "named": true
-      },
-      {
         "type": "right",
         "named": true
       },
@@ -89,24 +85,6 @@
       },
       {
         "type": "verb",
-        "named": true
-      }
-    ]
-  },
-  {
-    "type": "query",
-    "named": true,
-    "subtypes": [
-      {
-        "type": "delete",
-        "named": true
-      },
-      {
-        "type": "select",
-        "named": true
-      },
-      {
-        "type": "update",
         "named": true
       }
     ]
@@ -386,25 +364,6 @@
     }
   },
   {
-    "type": "delete",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "from",
-          "named": true
-        },
-        {
-          "type": "where",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
     "type": "dict",
     "named": true,
     "fields": {},
@@ -452,21 +411,6 @@
     "type": "floats",
     "named": true,
     "fields": {}
-  },
-  {
-    "type": "from",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "var",
-          "named": true
-        }
-      ]
-    }
   },
   {
     "type": "group",
@@ -815,56 +759,6 @@
     }
   },
   {
-    "type": "rows",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "adjunct",
-          "named": true
-        },
-        {
-          "type": "clause",
-          "named": true
-        },
-        {
-          "type": "noun",
-          "named": true
-        },
-        {
-          "type": "verb",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "select",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "from",
-          "named": true
-        },
-        {
-          "type": "rows",
-          "named": true
-        },
-        {
-          "type": "where",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
     "type": "sep",
     "named": true,
     "fields": {}
@@ -1050,29 +944,6 @@
     }
   },
   {
-    "type": "update",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "from",
-          "named": true
-        },
-        {
-          "type": "rows",
-          "named": true
-        },
-        {
-          "type": "where",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
     "type": "utable",
     "named": true,
     "fields": {},
@@ -1086,33 +957,6 @@
         },
         {
           "type": "item",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "where",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "adjunct",
-          "named": true
-        },
-        {
-          "type": "clause",
-          "named": true
-        },
-        {
-          "type": "noun",
-          "named": true
-        },
-        {
-          "type": "verb",
           "named": true
         }
       ]
@@ -1167,10 +1011,6 @@
     "named": false
   },
   {
-    "type": "by",
-    "named": false
-  },
-  {
     "type": "command",
     "named": true
   },
@@ -1187,10 +1027,6 @@
     "named": false
   },
   {
-    "type": "delete",
-    "named": false
-  },
-  {
     "type": "div",
     "named": false
   },
@@ -1204,10 +1040,6 @@
   },
   {
     "type": "first",
-    "named": false
-  },
-  {
-    "type": "from",
     "named": false
   },
   {
@@ -1235,10 +1067,6 @@
     "named": false
   },
   {
-    "type": "select",
-    "named": false
-  },
-  {
     "type": "sin",
     "named": false
   },
@@ -1255,20 +1083,12 @@
     "named": true
   },
   {
-    "type": "update",
-    "named": false
-  },
-  {
     "type": "var",
     "named": true
   },
   {
     "type": "verb_io",
     "named": true
-  },
-  {
-    "type": "where",
-    "named": false
   },
   {
     "type": "{",

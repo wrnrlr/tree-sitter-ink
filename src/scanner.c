@@ -1,10 +1,11 @@
 #include "tree_sitter/parser.h"
+#include <stdbool.h>
 
 enum TokenType { MINUS, BOOL, BOOLS, INTS, FLOATS, SYMBOLS, STRING, DATE, DATES, TIME, TIMES };
 
-void *tree_sitter_ink_external_scanner_create() { return 0; }
+void *tree_sitter_ink_external_scanner_create(void) { return 0; }
 void tree_sitter_ink_external_scanner_destroy(void *p) {}
-unsigned tree_sitter_ink_external_scanner_serialize(void *payload, const char *buffer) { return 0; }
+unsigned tree_sitter_ink_external_scanner_serialize(void *payload, char *buffer) { return 0; }
 void tree_sitter_ink_external_scanner_deserialize(void *payload, const char *buffer, unsigned length) {}
 
 static void adv(TSLexer *l) { l->advance(l, 0); }
@@ -195,7 +196,7 @@ static int scan_time_val(TSLexer *l) {
   return 1;
 }
 
-int tree_sitter_ink_external_scanner_scan(void *payload, TSLexer *lexer, const char *valid_symbols) {
+bool tree_sitter_ink_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid_symbols) {
 
   /* STRING: direct match when at '"' */
   if (valid_symbols[STRING] && lexer->lookahead == '"') {
