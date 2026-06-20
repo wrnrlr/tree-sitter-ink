@@ -10,7 +10,10 @@
         "k"
       ],
       "injection-regex": "^ink$",
-      "class-name": "TreeSitterInk"
+      "class-name": "TreeSitterInk",
+      "highlights": [
+        "queries/highlights.scm"
+      ]
     }
   ],
   "metadata": {

@@ -37,7 +37,12 @@ module.exports = grammar({
     // Clauses
     right: $ => S(':', $.clause),
     defer: $ => S(':', $.adjunct),
-    bind:    $ => D(1, P(1, S(F('v', $.noun), F('f', O($.op)), C('::', ':'), F('a', O($.clause))))),
+    // Plain assignment allows an empty value (`x:` continued on the next line);
+    // compound assignment (`x+:y`) requires the value, so that `1<:\y` is NOT
+    // mis-read as "assign to 1" — it falls back to a transit with verb `<:\`.
+    bind:    $ => D(1, P(1, C(
+                     S(F('v', $.noun), C('::', ':'), F('a', O($.clause))),
+                     S(F('v', $.noun), F('f', $.op), C('::', ':'), F('a', $.clause))))),
     pending: $ => P(1, S(F('v', $.noun), F('f', O($.op)), C('::', ':'), F('a', $.adjunct))),
     transit: $ => D(1, S(F('a', $.noun), F('v', C($.verb, A($._MINUS, $.op))), F('b', $.clause))),
     intrans: $ => P(1, S(F('a', $.noun), F('v', $.verb), OF('z', $.adjunct))),
@@ -69,7 +74,10 @@ module.exports = grammar({
 
     op: $ => C(P(-1, ':'), /[%!&+*|<>=~,^#_$?@.\/-]/, $._keyword_op),
     verb_io: _ => T(S(/\d/, ':')),
-    adverb: _ => P(1, I(/[\/\\']:?/)),
+    // A leading ':' forces the monadic valence of the verb being modified, e.g.
+    // `<:\` (grade-up, scanned).  Gluing it to the adverb token keeps it from
+    // being mistaken for an assignment ':'.
+    adverb: _ => P(1, I(/:?[\/\\']:?/)),
 
     // Literals
     literal: $ => C($.bool, $.bools, $.int, $.ints, $.float, $.floats, $.string, $.symbols, $.symbol, $.var, $.date, $.dates, $.time, $.times),
