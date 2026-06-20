@@ -131,11 +131,17 @@ a:1+2
 a:@2
 a+:1
 a:
+a::1
+a+::1
+a::
 ---
 (terse
   (bind (literal (var)) (literal (int))) (sep)
   (bind (literal (var)) (transit (literal (int)) (op) (literal (int)))) (sep)
   (bind (literal (var)) (apposit (op) (literal (int)))) (sep)
+  (bind (literal (var)) (op) (literal (int))) (sep)
+  (bind (literal (var))) (sep)
+  (bind (literal (var)) (literal (int))) (sep)
   (bind (literal (var)) (op) (literal (int))) (sep)
   (bind (literal (var)))
 )

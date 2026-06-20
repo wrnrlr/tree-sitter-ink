@@ -37,8 +37,8 @@ module.exports = grammar({
     // Clauses
     right: $ => S(':', $.clause),
     defer: $ => S(':', $.adjunct),
-    bind:    $ => D(1, P(1, S(F('v', $.noun), F('f', O($.op)), ':', F('a', O($.clause))))),
-    pending: $ => P(1, S(F('v', $.noun), F('f', O($.op)), ':', F('a', $.adjunct))),
+    bind:    $ => D(1, P(1, S(F('v', $.noun), F('f', O($.op)), C('::', ':'), F('a', O($.clause))))),
+    pending: $ => P(1, S(F('v', $.noun), F('f', O($.op)), C('::', ':'), F('a', $.adjunct))),
     transit: $ => D(1, S(F('a', $.noun), F('v', C($.verb, A($._MINUS, $.op))), F('b', $.clause))),
     intrans: $ => P(1, S(F('a', $.noun), F('v', $.verb), OF('z', $.adjunct))),
     apposit: $ => D(-1, S(F('f', $.phrase), F('a', $.clause))),
