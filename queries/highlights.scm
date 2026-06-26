@@ -4,10 +4,9 @@
 ; Strings
 (string) @string
 
-; Symbols (atoms) — use the symbol-family scope so themes can colour them
-; distinctly from numbers (which are @number).
-(symbol) @string.special.symbol
-(symbols) @string.special.symbol
+; Symbols (atoms) — colour them like strings (green); both are literal text.
+(symbol) @string
+(symbols) @string
 
 ; Numbers
 (int) @number
@@ -50,8 +49,14 @@
 ; builtin still reads as a parameter)
 (args (var) @variable.parameter)
 
-; I/O verbs (0: 1: etc.)
+; I/O verbs (0: 1: etc.) — generic fallback (standalone / partial use).
 (verb_io) @function.builtin
+
+; …but colour by valence like ordinary verbs when the AST knows it:
+; monadic (read) reads like a monadic op, dyadic (write) like a dyadic op.
+; These come after the generic rule so they win under Zed's last-match-wins.
+(apposit f: (verb_io) @function)
+(transit v: (verb_io) @keyword.operator)
 
 ; Lambda braces
 (lambda "{" @punctuation.bracket)
@@ -87,31 +92,49 @@
 (list ")" @punctuation)
 (group "(" @punctuation.bracket)
 (group ")" @punctuation.bracket)
-(apply "[" @punctuation.bracket)
-(apply "]" @punctuation.bracket)
+
+; Structural brackets stay white (dict / table literals).
 (dict "[" @punctuation.bracket)
 (dict "]" @punctuation.bracket)
 (table "[[]" @punctuation.bracket)
 (table "]" @punctuation.bracket)
-(amend "@[" @punctuation.bracket)
-(amend "]" @punctuation.bracket)
-(dmend ".[" @punctuation.bracket)
-(dmend "]" @punctuation.bracket)
+(utable "[[" @punctuation.bracket)
+(utable "]" @punctuation.bracket)
 (cond "$[" @punctuation.bracket)
 (cond "]" @punctuation.bracket)
-(args "[" @punctuation.bracket)
-(args "]" @punctuation.bracket)
 
-; Separators (de-emphasized)
-(div) @punctuation
+; Syntactic brackets — colour the brackets grey like comments while leaving the
+; content (parameters, indices) its own colour. Covers lambda args `[x;y]`,
+; call/index `f[…]`, amend `@[…]` and drill `.[…]`.
+(args "[" @comment)
+(args "]" @comment)
+(apply "[" @comment)
+(apply "]" @comment)
+; Amend `@[…]` and drill `.[…]` — only the `@`/`.` glyph is red like assignment;
+; the brackets are grey like the other syntactic brackets.  The glyph is its own
+; external token (amend_op/drill_op) so it can be coloured apart from the `[`.
+(amend (amend_op) @punctuation.special)
+(amend "[" @comment)
+(amend "]" @comment)
+(dmend (drill_op) @punctuation.special)
+(dmend "[" @comment)
+(dmend "]" @comment)
 
-; Assignment (local)
+; Separators (`;` between items / statements) — grey like comments.
+(div) @comment
+(sep) @comment
+(cond ";" @comment)
+
+; Assignment (local) and global both red — `:` and `::` read identically.
 (bind ":" @punctuation.special)
 (pending ":" @punctuation.special)
+(bind "::" @punctuation.special)
+(pending "::" @punctuation.special)
 
-; Assignment (global)
-(bind "::" @keyword)
-(pending "::" @keyword)
+; Modify-assign operator (`x+:y`, `x*::y`): the op fused to the assignment is
+; red like the `:`/`::` it binds with, not teal like a free operator.
+(bind f: (op) @punctuation.special)
+(pending f: (op) @punctuation.special)
 
 ; Monadic-force / partial verb colon (<:  #:  *:  :x return).
 ; Here ':' is NOT assignment — it belongs to the verb, so colour it like one.
@@ -120,3 +143,26 @@
 ; Standalone partial/composed verb (e.g. `f: *:`) — the verb and its ':' both green.
 (compose f: (op) @function)
 (compose v: (op) @function)
+
+; Fused reduce operators: +/ */ &/ |/  (see src/primitive/derived/fuse.zig).
+; DISABLED — kept for reference. Re-enable by uncommenting AND adding a theme
+; override with BOTH color and weight (Zed renders an unknown scope as default
+; foreground, i.e. white, so a colourless override is not enough):
+;   "theme_overrides": { "syntax": { "operator.fused": { "color": "#268bd2", "font_weight": 700 } } }
+; #match? must hold for BOTH the op and the adverb, so only the four fused
+; reductions match (not -/, +\, </, …). The optional leading space tolerates the
+; whitespace a (var/op) node absorbs when preceded by a space.
+; ((term f: (op) @operator.fused a: (adverb) @operator.fused)
+;  (#match? @operator.fused "^[ \t]*([+*&|]|/)$"))
+
+; Apply-form verb arity coloring: `f[x]` vs `f[x;y]`.
+; When a primitive op or io-verb appears as the called function, colour it like
+; the appropriate valence.  Default: monadic (@function).  Overridden to dyadic
+; (@keyword.operator) when the argument list contains a `;` separator (div node).
+; Trains (`*|[x]`), user vars (`f[x]`) and splices stay their default colour.
+(apply f: (op) @function)
+(apply f: (op) @keyword.operator
+       a: (seq (div)))
+(apply f: (verb_io) @function)
+(apply f: (verb_io) @keyword.operator
+       a: (seq (div)))

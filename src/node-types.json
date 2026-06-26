@@ -148,9 +148,13 @@
     "named": true,
     "fields": {},
     "children": {
-      "multiple": false,
+      "multiple": true,
       "required": true,
       "types": [
+        {
+          "type": "amend_op",
+          "named": true
+        },
         {
           "type": "seq",
           "named": true
@@ -392,9 +396,13 @@
     "named": true,
     "fields": {},
     "children": {
-      "multiple": false,
+      "multiple": true,
       "required": true,
       "types": [
+        {
+          "type": "drill_op",
+          "named": true
+        },
         {
           "type": "seq",
           "named": true
@@ -975,10 +983,6 @@
     "named": false
   },
   {
-    "type": ".[",
-    "named": false
-  },
-  {
     "type": ":",
     "named": false
   },
@@ -988,10 +992,6 @@
   },
   {
     "type": ";",
-    "named": false
-  },
-  {
-    "type": "@[",
     "named": false
   },
   {
@@ -1015,6 +1015,10 @@
     "named": false
   },
   {
+    "type": "amend_op",
+    "named": true
+  },
+  {
     "type": "command",
     "named": true
   },
@@ -1033,6 +1037,10 @@
   {
     "type": "div",
     "named": false
+  },
+  {
+    "type": "drill_op",
+    "named": true
   },
   {
     "type": "exec",

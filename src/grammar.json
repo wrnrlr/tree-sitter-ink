@@ -979,8 +979,15 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "STRING",
-            "value": "@["
+            "type": "SYMBOL",
+            "name": "amend_op"
+          },
+          {
+            "type": "IMMEDIATE_TOKEN",
+            "content": {
+              "type": "STRING",
+              "value": "["
+            }
           },
           {
             "type": "SYMBOL",
@@ -1000,8 +1007,15 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "STRING",
-            "value": ".["
+            "type": "SYMBOL",
+            "name": "drill_op"
+          },
+          {
+            "type": "IMMEDIATE_TOKEN",
+            "content": {
+              "type": "STRING",
+              "value": "["
+            }
           },
           {
             "type": "SYMBOL",
@@ -1645,6 +1659,14 @@
     {
       "type": "SYMBOL",
       "name": "_TIMES"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "amend_op"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "drill_op"
     }
   ],
   "inline": [

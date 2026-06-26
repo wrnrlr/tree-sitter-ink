@@ -15,7 +15,7 @@ module.exports = grammar({
 
   word: $ => $.var,
   extras: $ => [/[ \t]+/],
-  externals: $ => [$._MINUS, $._BOOL, $._BOOLS, $._INTS, $._FLOATS, $._SYMBOLS, $._STRING, $._DATE, $._DATES, $._TIME, $._TIMES],
+  externals: $ => [$._MINUS, $._BOOL, $._BOOLS, $._INTS, $._FLOATS, $._SYMBOLS, $._STRING, $._DATE, $._DATES, $._TIME, $._TIMES, $.amend_op, $.drill_op],
   inline: $ => [$.phrase, $.items],
   supertypes: $ => [$.clause, $.phrase, $.noun, $.verb],
   conflicts: $ => [
@@ -63,8 +63,10 @@ module.exports = grammar({
     lambda: $ => S('{', F('a', O($.args)), F('b', O($.seq)), '}'),
     args: $ => S('[', O($.var), R(S($.div, O($.var))), ']'),
     cond: $ => S('$[', $._stmt, R1(S(';', $._stmt)), ']'),
-    amend: $ => P(11, S('@[', $.seq, ']')),
-    dmend: $ => P(11, S('.[', $.seq, ']')),
+    // `@`/`.` are emitted as their own external token (amend_op/drill_op) with an
+    // immediate `[`, so the glyph and bracket can be highlighted separately.
+    amend: $ => P(11, S($.amend_op, I('['), $.seq, ']')),
+    dmend: $ => P(11, S($.drill_op, I('['), $.seq, ']')),
     dict: $ => S('[', O($.items), ']'),
     table: $ => P(3, S('[[]', O($.items), ']')),
     utable: $ => P(2, S('[[', $.items, ']', O($.items), ']')),

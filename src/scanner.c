@@ -1,7 +1,7 @@
 #include "tree_sitter/parser.h"
 #include <stdbool.h>
 
-enum TokenType { MINUS, BOOL, BOOLS, INTS, FLOATS, SYMBOLS, STRING, DATE, DATES, TIME, TIMES };
+enum TokenType { MINUS, BOOL, BOOLS, INTS, FLOATS, SYMBOLS, STRING, DATE, DATES, TIME, TIMES, AMEND_OP, DRILL_OP };
 
 void *tree_sitter_ink_external_scanner_create(void) { return 0; }
 void tree_sitter_ink_external_scanner_destroy(void *p) {}
@@ -211,6 +211,28 @@ bool tree_sitter_ink_external_scanner_scan(void *payload, TSLexer *lexer, const 
     if ('0' > lexer->lookahead || lexer->lookahead > '9') return 0;
     lexer->result_symbol = MINUS;
     return 1;
+  }
+
+  /* AMEND_OP / DRILL_OP: the `@` / `.` glyph of `@[…]` / `.[…]`, emitted as its
+     OWN token (separate from the `[`) only when a `[` immediately follows — so
+     editors can colour the glyph apart from the bracket.  When no `[` follows we
+     return 0 and the regular lexer produces the ordinary `@` / `.` operator. */
+  if (valid_symbols[AMEND_OP] || valid_symbols[DRILL_OP]) {
+    while (lexer->lookahead == ' ' || lexer->lookahead == '\t') lexer->advance(lexer, 1);
+    if (valid_symbols[AMEND_OP] && lexer->lookahead == '@') {
+      lexer->advance(lexer, 0);
+      if (lexer->lookahead != '[') return 0;
+      lexer->mark_end(lexer);
+      lexer->result_symbol = AMEND_OP;
+      return 1;
+    }
+    if (valid_symbols[DRILL_OP] && lexer->lookahead == '.') {
+      lexer->advance(lexer, 0);
+      if (lexer->lookahead != '[') return 0;
+      lexer->mark_end(lexer);
+      lexer->result_symbol = DRILL_OP;
+      return 1;
+    }
   }
 
   /* Skip leading whitespace for strand/symbol/bool/date/time detection */
