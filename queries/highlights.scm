@@ -4,6 +4,10 @@
 ; Strings
 (string) @string
 
+; Escape sequences inside strings (`\n \t \\ \" …`) — grey like comments.
+; Must come after (string) so it overrides the green for its sub-range.
+(escape_sequence) @comment
+
 ; Symbols (atoms) — colour them like strings (green); both are literal text.
 (symbol) @string
 (symbols) @string

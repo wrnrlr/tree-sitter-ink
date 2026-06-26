@@ -15,7 +15,7 @@ module.exports = grammar({
 
   word: $ => $.var,
   extras: $ => [/[ \t]+/],
-  externals: $ => [$._MINUS, $._BOOL, $._BOOLS, $._INTS, $._FLOATS, $._SYMBOLS, $._STRING, $._DATE, $._DATES, $._TIME, $._TIMES, $.amend_op, $.drill_op],
+  externals: $ => [$._MINUS, $._BOOL, $._BOOLS, $._INTS, $._FLOATS, $._SYMBOLS, $._str_open, $._str_body, $.escape_sequence, $._str_close, $._DATE, $._DATES, $._TIME, $._TIMES, $.amend_op, $.drill_op],
   inline: $ => [$.phrase, $.items],
   supertypes: $ => [$.clause, $.phrase, $.noun, $.verb],
   conflicts: $ => [
@@ -89,7 +89,11 @@ module.exports = grammar({
     ints: $ => $._INTS,
     float: _ => C(/-?0[nw]/, /-?(?:\d+\.\d*|\.\d+|\d+)(?:e[+-]?\d+)?/),
     floats: $ => $._FLOATS,
-    string: $ => $._STRING,
+    // A string is open-quote, a run of escape sequences / literal body, then a
+    // closing quote.  The three structural tokens come from the external scanner
+    // (the close convention needs lookahead); `escape_sequence` is visible so
+    // editors can colour `\n \t \\ …` apart from the body.
+    string: $ => S($._str_open, R(C($.escape_sequence, $._str_body)), $._str_close),
     symbol: $ => T(S('`', O(C(
       /[a-zA-Z0-9.]+/,
       /[%!&+*|<>=~,^#_$?@\/-]+/,

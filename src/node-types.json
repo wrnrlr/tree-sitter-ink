@@ -813,7 +813,17 @@
   {
     "type": "string",
     "named": true,
-    "fields": {}
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "escape_sequence",
+          "named": true
+        }
+      ]
+    }
   },
   {
     "type": "symbols",
@@ -1040,6 +1050,10 @@
   },
   {
     "type": "drill_op",
+    "named": true
+  },
+  {
+    "type": "escape_sequence",
     "named": true
   },
   {

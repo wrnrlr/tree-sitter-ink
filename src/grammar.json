@@ -1359,8 +1359,33 @@
       "name": "_FLOATS"
     },
     "string": {
-      "type": "SYMBOL",
-      "name": "_STRING"
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "_str_open"
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "escape_sequence"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "_str_body"
+              }
+            ]
+          }
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_str_close"
+        }
+      ]
     },
     "symbol": {
       "type": "TOKEN",
@@ -1642,7 +1667,19 @@
     },
     {
       "type": "SYMBOL",
-      "name": "_STRING"
+      "name": "_str_open"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_str_body"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "escape_sequence"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_str_close"
     },
     {
       "type": "SYMBOL",

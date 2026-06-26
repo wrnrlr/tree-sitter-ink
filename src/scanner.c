@@ -1,7 +1,9 @@
 #include "tree_sitter/parser.h"
 #include <stdbool.h>
 
-enum TokenType { MINUS, BOOL, BOOLS, INTS, FLOATS, SYMBOLS, STRING, DATE, DATES, TIME, TIMES, AMEND_OP, DRILL_OP };
+enum TokenType { MINUS, BOOL, BOOLS, INTS, FLOATS, SYMBOLS,
+                 STR_OPEN, STR_BODY, STR_ESC, STR_CLOSE,
+                 DATE, DATES, TIME, TIMES, AMEND_OP, DRILL_OP };
 
 void *tree_sitter_ink_external_scanner_create(void) { return 0; }
 void tree_sitter_ink_external_scanner_destroy(void *p) {}
@@ -24,23 +26,63 @@ static int is_string_close_char(int c) {
   return 0;
 }
 
-static int scan_string(TSLexer *l) {
-  adv(l);  /* consume opening '"' */
-  while (1) {
-    if (l->lookahead == 0 || l->lookahead == '\n') break;
-    if (l->lookahead == '"') {
-      adv(l);
-      if (is_string_close_char(l->lookahead)) break;
-    } else if (l->lookahead == '\\') {
-      adv(l);
-      if (l->lookahead != 0) adv(l);
-    } else {
-      adv(l);
-    }
+/* Tokenize the inside of a string into escape / body / closing-quote tokens.
+   Driven entirely by valid_symbols (the grammar position), so no scanner state
+   is needed.  Returns 1 with result_symbol set, or 0 if nothing applies. */
+static int scan_str_inside(TSLexer *l, const bool *v) {
+  /* escape sequence: backslash + one (non-newline) char */
+  if (v[STR_ESC] && l->lookahead == '\\') {
+    adv(l);
+    if (l->lookahead != 0 && l->lookahead != '\n') adv(l);
+    l->mark_end(l);
+    l->result_symbol = STR_ESC;
+    return 1;
   }
-  l->mark_end(l);
-  l->result_symbol = STRING;
-  return 1;
+  /* closing quote: a '"' whose following char is a close char (or EOF) */
+  if (v[STR_CLOSE] && l->lookahead == '"') {
+    adv(l);              /* consume the '"' */
+    l->mark_end(l);
+    if (is_string_close_char(l->lookahead)) { l->result_symbol = STR_CLOSE; return 1; }
+    /* embedded quote (K convention): treat as body, continuing past it */
+    if (v[STR_BODY]) {
+      while (1) {
+        int c = l->lookahead;
+        if (c == 0 || c == '\n' || c == '\\') break;
+        if (c == '"') {
+          adv(l);
+          if (is_string_close_char(l->lookahead)) break; /* real closer ahead */
+          l->mark_end(l);                                 /* keep embedded '"' */
+          continue;
+        }
+        adv(l);
+        l->mark_end(l);
+      }
+      l->result_symbol = STR_BODY;
+      return 1;
+    }
+    l->result_symbol = STR_CLOSE;
+    return 1;
+  }
+  /* body: a run of ordinary chars (and embedded quotes) */
+  if (v[STR_BODY] && l->lookahead != 0 && l->lookahead != '\n' && l->lookahead != '\\') {
+    int any = 0;
+    while (1) {
+      int c = l->lookahead;
+      if (c == 0 || c == '\n' || c == '\\') break;
+      if (c == '"') {
+        adv(l);
+        if (is_string_close_char(l->lookahead)) break; /* don't include the closer */
+        l->mark_end(l);
+        any = 1;
+        continue;
+      }
+      adv(l);
+      l->mark_end(l);
+      any = 1;
+    }
+    if (any) { l->result_symbol = STR_BODY; return 1; }
+  }
+  return 0;
 }
 
 /* After initial digit(s), scan suffix to determine type.
@@ -198,9 +240,19 @@ static int scan_time_val(TSLexer *l) {
 
 bool tree_sitter_ink_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid_symbols) {
 
-  /* STRING: direct match when at '"' */
-  if (valid_symbols[STRING] && lexer->lookahead == '"') {
-    return scan_string(lexer);
+  /* Inside a string: emit escape / body / closing-quote tokens.  No whitespace
+     skipping — spaces inside a string are literal content.  Must come first so
+     extras-skipping never eats leading string content. */
+  if (valid_symbols[STR_BODY] || valid_symbols[STR_ESC] || valid_symbols[STR_CLOSE]) {
+    if (scan_str_inside(lexer, valid_symbols)) return 1;
+  }
+
+  /* STR_OPEN: opening '"' (direct match, no whitespace skip). */
+  if (valid_symbols[STR_OPEN] && lexer->lookahead == '"') {
+    adv(lexer);
+    lexer->mark_end(lexer);
+    lexer->result_symbol = STR_OPEN;
+    return 1;
   }
 
   /* MINUS: '-' that starts a negative number in transit position */
@@ -235,8 +287,8 @@ bool tree_sitter_ink_external_scanner_scan(void *payload, TSLexer *lexer, const 
     }
   }
 
-  /* Skip leading whitespace for strand/symbol/bool/date/time detection */
-  int need_skip = valid_symbols[STRING]  || valid_symbols[SYMBOLS] ||
+  /* Skip leading whitespace for strand/symbol/bool/date/time/string-open. */
+  int need_skip = valid_symbols[STR_OPEN] || valid_symbols[SYMBOLS] ||
                   valid_symbols[BOOL]    || valid_symbols[BOOLS]   ||
                   valid_symbols[INTS]    || valid_symbols[FLOATS]  ||
                   valid_symbols[DATE]    || valid_symbols[DATES]   ||
@@ -246,9 +298,12 @@ bool tree_sitter_ink_external_scanner_scan(void *payload, TSLexer *lexer, const 
       lexer->advance(lexer, 1);
   }
 
-  /* STRING: match after whitespace skip */
-  if (valid_symbols[STRING] && lexer->lookahead == '"') {
-    return scan_string(lexer);
+  /* STR_OPEN: opening '"' after whitespace skip. */
+  if (valid_symbols[STR_OPEN] && lexer->lookahead == '"') {
+    adv(lexer);
+    lexer->mark_end(lexer);
+    lexer->result_symbol = STR_OPEN;
+    return 1;
   }
 
   /* SYMBOLS: two or more symbols */
