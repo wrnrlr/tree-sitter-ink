@@ -1363,7 +1363,7 @@
       "members": [
         {
           "type": "SYMBOL",
-          "name": "_str_open"
+          "name": "str_open"
         },
         {
           "type": "REPEAT",
@@ -1383,7 +1383,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "_str_close"
+          "name": "str_close"
         }
       ]
     },
@@ -1667,7 +1667,7 @@
     },
     {
       "type": "SYMBOL",
-      "name": "_str_open"
+      "name": "str_open"
     },
     {
       "type": "SYMBOL",
@@ -1679,7 +1679,7 @@
     },
     {
       "type": "SYMBOL",
-      "name": "_str_close"
+      "name": "str_close"
     },
     {
       "type": "SYMBOL",

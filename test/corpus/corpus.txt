@@ -74,9 +74,9 @@ string
 ""; "H"; "Hi"
 ---
 (terse
-  (literal (string)) (sep)
-  (literal (string)) (sep)
-  (literal (string))
+  (literal (string (str_open) (str_close))) (sep)
+  (literal (string (str_open) (str_close))) (sep)
+  (literal (string (str_open) (str_close)))
 )
 ==================
 date & time
@@ -234,7 +234,7 @@ IO verbs
   (apposit
     f: (verb_io) a: (apposit f: (op) a: (literal (var)))) (sep)
   (transit
-    a: (literal (string)) v: (verb_io)
+    a: (literal (string (str_open) (str_close))) v: (verb_io)
     b: (apposit f: (op) a: (literal (var))))
 )
 ==================
@@ -306,7 +306,7 @@ each-prior adverb
 (terse
   (apposit
     (term (literal (int)) (adverb))
-    (literal (string))))
+    (literal (string (str_open) (str_close)))))
 ==================
 each-right adverb
 ==================

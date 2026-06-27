@@ -8,11 +8,11 @@ dict
 ---
 (terse
   (dict (item k: (name (int)) v: (literal (symbol)))) (sep)
-  (dict (item k: (name (var)) v: (literal (string)))) (sep)
+  (dict (item k: (name (var)) v: (literal (string (str_open) (str_close))))) (sep)
   (dict
-    (item k: (name (var)) v: (literal (string))) (div)
+    (item k: (name (var)) v: (literal (string (str_open) (str_close)))) (div)
     (item k: (name (var)) v: (literal (int)))) (sep)
-  (dict (item k: (name (string)) v: (literal (int))))
+  (dict (item k: (name (string (str_open) (str_close))) v: (literal (int))))
 )
 ==================
 table

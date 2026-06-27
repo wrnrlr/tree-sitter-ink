@@ -816,10 +816,18 @@
     "fields": {},
     "children": {
       "multiple": true,
-      "required": false,
+      "required": true,
       "types": [
         {
           "type": "escape_sequence",
+          "named": true
+        },
+        {
+          "type": "str_close",
+          "named": true
+        },
+        {
+          "type": "str_open",
           "named": true
         }
       ]
@@ -1103,6 +1111,14 @@
   {
     "type": "sqrt",
     "named": false
+  },
+  {
+    "type": "str_close",
+    "named": true
+  },
+  {
+    "type": "str_open",
+    "named": true
   },
   {
     "type": "symbol",
