@@ -79,6 +79,28 @@ string
   (literal (string (str_open) (str_close)))
 )
 ==================
+multi-line string
+==================
+a:"
+  Hello,
+  World!"
+---
+(terse
+  (bind
+    v: (literal (var))
+    a: (literal (string (str_open) (str_close)))))
+==================
+multi-line string, closing quote on its own line
+==================
+a:"
+  Hello!
+"
+---
+(terse
+  (bind
+    v: (literal (var))
+    a: (literal (string (str_open) (str_close)))))
+==================
 date & time
 ==================
 2026.02.16; 12:34:56.789

@@ -1,14 +1,32 @@
 #include "tree_sitter/parser.h"
+#include "tree_sitter/alloc.h"
 #include <stdbool.h>
 
 enum TokenType { MINUS, BOOL, BOOLS, INTS, FLOATS, SYMBOLS,
                  STR_OPEN, STR_BODY, STR_ESC, STR_CLOSE,
                  DATE, DATES, TIME, TIMES, AMEND_OP, DRILL_OP };
 
-void *tree_sitter_ink_external_scanner_create(void) { return 0; }
-void tree_sitter_ink_external_scanner_destroy(void *p) {}
-unsigned tree_sitter_ink_external_scanner_serialize(void *payload, char *buffer) { return 0; }
-void tree_sitter_ink_external_scanner_deserialize(void *payload, const char *buffer, unsigned length) {}
+/* The only persistent scanner state is whether the string currently being
+   scanned is a multi-line string.  A string is multi-line when a newline
+   immediately follows the opening quote (`"\n…`); such a string spans newlines
+   until a closing quote, whereas a plain string ends at the first newline.
+   See src/parser/lexer.zig (the reference implementation). */
+typedef struct { bool multiline; } Scanner;
+
+void *tree_sitter_ink_external_scanner_create(void) {
+  Scanner *s = ts_calloc(1, sizeof(Scanner));
+  return s;
+}
+void tree_sitter_ink_external_scanner_destroy(void *p) { ts_free(p); }
+unsigned tree_sitter_ink_external_scanner_serialize(void *payload, char *buffer) {
+  Scanner *s = (Scanner *)payload;
+  buffer[0] = s->multiline ? 1 : 0;
+  return 1;
+}
+void tree_sitter_ink_external_scanner_deserialize(void *payload, const char *buffer, unsigned length) {
+  Scanner *s = (Scanner *)payload;
+  s->multiline = (length > 0) ? (buffer[0] != 0) : false;
+}
 
 static void adv(TSLexer *l) { l->advance(l, 0); }
 static int dig(int c) { return c >= '0' && c <= '9'; }
@@ -27,9 +45,11 @@ static int is_string_close_char(int c) {
 }
 
 /* Tokenize the inside of a string into escape / body / closing-quote tokens.
-   Driven entirely by valid_symbols (the grammar position), so no scanner state
-   is needed.  Returns 1 with result_symbol set, or 0 if nothing applies. */
-static int scan_str_inside(TSLexer *l, const bool *v) {
+   Driven by valid_symbols (the grammar position) plus the `ml` flag (whether
+   this is a multi-line string).  In a multi-line string newlines are ordinary
+   body content; in a plain string a newline ends the body (an unclosed string).
+   Returns 1 with result_symbol set, or 0 if nothing applies. */
+static int scan_str_inside(TSLexer *l, const bool *v, bool ml) {
   /* escape sequence: backslash + one (non-newline) char */
   if (v[STR_ESC] && l->lookahead == '\\') {
     adv(l);
@@ -47,7 +67,8 @@ static int scan_str_inside(TSLexer *l, const bool *v) {
     if (v[STR_BODY]) {
       while (1) {
         int c = l->lookahead;
-        if (c == 0 || c == '\n' || c == '\\') break;
+        if (c == 0 || c == '\\') break;
+        if (c == '\n' && !ml) break;
         if (c == '"') {
           adv(l);
           if (is_string_close_char(l->lookahead)) break; /* real closer ahead */
@@ -64,11 +85,13 @@ static int scan_str_inside(TSLexer *l, const bool *v) {
     return 1;
   }
   /* body: a run of ordinary chars (and embedded quotes) */
-  if (v[STR_BODY] && l->lookahead != 0 && l->lookahead != '\n' && l->lookahead != '\\') {
+  if (v[STR_BODY] && l->lookahead != 0 && l->lookahead != '\\' &&
+      (ml || l->lookahead != '\n')) {
     int any = 0;
     while (1) {
       int c = l->lookahead;
-      if (c == 0 || c == '\n' || c == '\\') break;
+      if (c == 0 || c == '\\') break;
+      if (c == '\n' && !ml) break;
       if (c == '"') {
         adv(l);
         if (is_string_close_char(l->lookahead)) break; /* don't include the closer */
@@ -239,18 +262,21 @@ static int scan_time_val(TSLexer *l) {
 }
 
 bool tree_sitter_ink_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid_symbols) {
+  Scanner *s = (Scanner *)payload;
 
   /* Inside a string: emit escape / body / closing-quote tokens.  No whitespace
      skipping — spaces inside a string are literal content.  Must come first so
      extras-skipping never eats leading string content. */
   if (valid_symbols[STR_BODY] || valid_symbols[STR_ESC] || valid_symbols[STR_CLOSE]) {
-    if (scan_str_inside(lexer, valid_symbols)) return 1;
+    if (scan_str_inside(lexer, valid_symbols, s->multiline)) return 1;
   }
 
-  /* STR_OPEN: opening '"' (direct match, no whitespace skip). */
+  /* STR_OPEN: opening '"' (direct match, no whitespace skip).  A newline right
+     after the quote marks a multi-line string for the body scan that follows. */
   if (valid_symbols[STR_OPEN] && lexer->lookahead == '"') {
     adv(lexer);
     lexer->mark_end(lexer);
+    s->multiline = (lexer->lookahead == '\n');
     lexer->result_symbol = STR_OPEN;
     return 1;
   }
@@ -302,6 +328,7 @@ bool tree_sitter_ink_external_scanner_scan(void *payload, TSLexer *lexer, const 
   if (valid_symbols[STR_OPEN] && lexer->lookahead == '"') {
     adv(lexer);
     lexer->mark_end(lexer);
+    s->multiline = (lexer->lookahead == '\n');
     lexer->result_symbol = STR_OPEN;
     return 1;
   }

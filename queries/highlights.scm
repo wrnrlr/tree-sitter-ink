@@ -86,6 +86,8 @@
 (op "div" @function.builtin)
 (op "parse" @function.builtin)
 (op "exec" @function.builtin)
+(op "depth" @function.builtin)
+(op "epoch" @function.builtin)
 
 ; Conditionals
 (cond "$[" @keyword)

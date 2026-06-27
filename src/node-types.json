@@ -1053,12 +1053,20 @@
     "named": false
   },
   {
+    "type": "depth",
+    "named": false
+  },
+  {
     "type": "div",
     "named": false
   },
   {
     "type": "drill_op",
     "named": true
+  },
+  {
+    "type": "epoch",
+    "named": false
   },
   {
     "type": "escape_sequence",

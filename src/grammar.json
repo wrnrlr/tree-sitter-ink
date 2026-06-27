@@ -1527,6 +1527,14 @@
         {
           "type": "STRING",
           "value": "exec"
+        },
+        {
+          "type": "STRING",
+          "value": "depth"
+        },
+        {
+          "type": "STRING",
+          "value": "epoch"
         }
       ]
     },

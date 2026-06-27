@@ -92,7 +92,9 @@ module.exports = grammar({
     // A string is open-quote, a run of escape sequences / literal body, then a
     // closing quote.  The three structural tokens come from the external scanner
     // (the close convention needs lookahead); `escape_sequence` is visible so
-    // editors can colour `\n \t \\ …` apart from the body.
+    // editors can colour `\n \t \\ …` apart from the body.  When a newline
+    // immediately follows the opening quote the string is multi-line: the body
+    // (`_str_body`) then spans newlines until the closing quote.
     string: $ => S($.str_open, R(C($.escape_sequence, $._str_body)), $.str_close),
     symbol: $ => T(S('`', O(C(
       /[a-zA-Z0-9.]+/,
@@ -108,7 +110,7 @@ module.exports = grammar({
 
     _keyword_op: $ => C('sqrt', 'sqr', 'exp', 'log', 'sin', 'cos', 'abs',
                          'first', 'last', 'count', 'in', 'has',
-                         'mod', 'div', 'parse', 'exec'),
+                         'mod', 'div', 'parse', 'exec', 'depth', 'epoch'),
 
     sep: _ => C(/;\s*/, /\n/),
     div: _ => C(/;\s*/, /\n\s*/),
