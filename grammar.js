@@ -1,18 +1,7 @@
-/**
- * @file k based array programming language
- * @author Werner Laurensse
- * @license MIT
- */
-
-/// <reference types="tree-sitter-cli/dsl" />
-// @ts-check
-
 const F = field, O = optional, R = repeat, R1 = repeat1, S = seq, P = prec, T = token, D = prec.dynamic,
       C = choice, A = alias, OF = (a, b) => O(F(a, b)), PR = prec.right, I = T.immediate
-
 module.exports = grammar({
   name: 'ink',
-
   word: $ => $.var,
   extras: $ => [/[ \t]+/],
   externals: $ => [$._MINUS, $._BOOL, $._BOOLS, $._INTS, $._FLOATS, $._SYMBOLS, $.str_open, $._str_body, $.escape_sequence, $.str_close, $._DATE, $._DATES, $._TIME, $._TIMES, $.amend_op, $.drill_op],
@@ -25,7 +14,6 @@ module.exports = grammar({
     [$.literal, $.name],
     [$.args, $.dict],
   ],
-
   rules: {
     terse: $ => S(O($._line), R(S($.sep, O($._line)))),
     _line: $ => C(S($._stmt, O($._inline_comment)), $._line_comment, $.command),
